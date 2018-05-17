@@ -1,0 +1,1155 @@
+<template>
+<div>
+  <div class="tac custom-scrollbar" id="vpic_sidebar">
+    <el-menu unique-opened class="el-menu-vertical-demo" theme="dark">
+      <el-submenu index="1">
+        <template slot="title"><i class="my-icon-cut my-icon"></i>裁切</template>
+        <el-submenu index="1-1">
+          <template slot="title">固定比例</template>
+          <el-menu-item-group>
+            <el-menu-item v-for="cropItem in cropList" :index="cropItem.order" :data-aspectratio="cropItem.val" @click="setAspectRatio">{{ cropItem.name }}</el-menu-item>
+          </el-menu-item-group>
+        </el-submenu>
+        <el-menu-item index="1-2" data-aspectratio="NaN" @click="setAspectRatio">自由裁切</el-menu-item>
+      </el-submenu>
+      <!--222222222222-->
+      <el-submenu index="2">
+        <template slot="title"><i class="my-icon-edit my-icon"></i>旋转</template>
+        <el-menu-item-group>
+          <el-menu-item index="2-1-1">
+            <div class="val-tag clearfix">
+              <span class="fl">旋转</span>
+              <span class="fr">{{ rotate }}</span>
+            </div>
+            <el-slider v-model="rotate" :min="-50" :max="50" :show-tooltip="false" @change="setRotate"></el-slider>
+          </el-menu-item>
+          <el-menu-item index="2-1-2">
+            <el-button type="primary" @click="saveResult">确定</el-button>
+            <el-button @click="resetRotate">重置</el-button>
+          </el-menu-item>
+        </el-menu-item-group>
+      </el-submenu>
+      <!--33333333333333-->
+      <el-submenu index="3">
+        <template slot="title"><i class="my-icon-edit my-icon"></i>基础调整</template>
+        <!--3-1-->
+        <el-submenu index="3-1">
+          <template slot="title">亮度 / 对比度</template>
+          <el-menu-item-group>
+            <el-menu-item index="3-1-1">
+              <div class="val-tag clearfix">
+                <span class="fl">亮度</span>
+                <span class="fr">{{ brightness }}</span>
+              </div>
+              <el-slider v-model="brightness" :min="-50" :max="50" :show-tooltip="false" @change="setBrightness"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="3-1-2">
+              <div class="val-tag clearfix">
+                <span class="fl">对比度</span>
+                <span class="fr">{{ contrast }}</span>
+              </div>
+              <el-slider v-model="contrast" :min="-50" :max="50" :show-tooltip="false" @change="setContrast"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="3-1-3">
+              <el-button type="primary" @click="saveResult">确定</el-button>
+              <el-button @click="resetBrightnessAndContrast">重置</el-button>
+            </el-menu-item>
+          </el-menu-item-group>
+        </el-submenu>
+        <!--3-2-->
+        <el-submenu index="3-2">
+          <template slot="title">饱和度</template>
+          <el-menu-item-group>
+            <el-menu-item index="3-2">
+              <div class="val-tag clearfix">
+                <span class="fl">饱和度</span>
+                <span class="fr">{{ saturation }}</span>
+              </div>
+              <el-slider v-model="saturation" :min="-50" :max="50" :show-tooltip="false" @change="setSaturation"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="3-2-3">
+              <el-button type="primary" @click="saveResult">确定</el-button>
+              <el-button @click="resetSaturation">重置</el-button>
+            </el-menu-item>
+          </el-menu-item-group>
+        </el-submenu>
+        <!--&lt;!&ndash;3-3&ndash;&gt;-->
+        <!--<el-submenu index="3-3">-->
+          <!--<template slot="title">灰度 / 反色</template>-->
+          <!--<el-menu-item-group>-->
+            <!--<el-menu-item index="3-3-1">-->
+              <!--<div class="val-tag clearfix">-->
+                <!--<span class="fl">灰度</span>-->
+                <!--<span class="fr">{{ greyscale }}</span>-->
+              <!--</div>-->
+              <!--<el-switch v-model="greyscale" on-text="" off-text="" @change="setGreyscale" on-color="#7D5CFF"></el-switch>-->
+            <!--</el-menu-item>-->
+            <!--<el-menu-item index="3-3-2">-->
+              <!--<div class="val-tag clearfix">-->
+                <!--<span class="fl">反色</span>-->
+                <!--<span class="fr">{{ invert }}</span>-->
+              <!--</div>-->
+              <!--<el-switch v-model="invert" on-text="" off-text="" @change="setInvert" on-color="#7D5CFF"></el-switch>-->
+            <!--</el-menu-item>-->
+            <!--<el-menu-item index="3-3-3">-->
+              <!--<el-button type="primary" @click="saveResult">确定</el-button>-->
+            <!--</el-menu-item>-->
+          <!--</el-menu-item-group>-->
+        <!--</el-submenu>-->
+      </el-submenu>
+      <!--444444444444444-->
+      <el-submenu index="4">
+        <template slot="title"><i class="my-icon-edit my-icon"></i>曲线</template>
+        <el-menu-item-group>
+          <el-menu-item index="4-1-1" style="height: 285px">
+            <canvas ref="curves" width="256" height="256" @mousedown=curveCanvasMouseDown($event)  @mousemove=curveCanvasMouseMove($event) @mouseup=curveCanvasMouseUp($event) ></canvas>
+          </el-menu-item>
+          <el-menu-item index="4-1-2">
+            <el-button type="primary" @click="saveCurvesResult">确定</el-button>
+            <el-button @click="resetCurves">重置</el-button>
+          </el-menu-item>
+        </el-menu-item-group>
+      </el-submenu>
+      <!--555555555555-->
+      <el-submenu index="5">
+        <template slot="title"><i class="my-icon-edit my-icon"></i> HSL</template>
+        <!--5-1-->
+        <el-submenu index="5-1">
+          <template slot="title">色相</template>
+          <el-menu-item-group>
+            <el-menu-item index="5-1-1">
+              <div class="val-tag clearfix">
+                <span class="fl">红</span>
+                <span class="fr">{{ hueRed }}</span>
+              </div>
+              <el-slider v-model="hueRed" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHueRed"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-1-2">
+              <div class="val-tag clearfix">
+                <span class="fl">橙</span>
+                <span class="fr">{{ hueOrange }}</span>
+              </div>
+              <el-slider v-model="hueOrange" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHueOrange"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-1-3">
+              <div class="val-tag clearfix">
+                <span class="fl">黄</span>
+                <span class="fr">{{ hueYellow }}</span>
+              </div>
+              <el-slider v-model="hueYellow" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHueYellow"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-1-4">
+              <div class="val-tag clearfix">
+                <span class="fl">绿</span>
+                <span class="fr">{{ hueGreen }}</span>
+              </div>
+              <el-slider v-model="hueGreen" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHueGreen"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-1-5">
+              <div class="val-tag clearfix">
+                <span class="fl">青</span>
+                <span class="fr">{{ hueCyan }}</span>
+              </div>
+              <el-slider v-model="hueCyan" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHueCyan"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-1-6">
+              <div class="val-tag clearfix">
+                <span class="fl">蓝</span>
+                <span class="fr">{{ hueBlue }}</span>
+              </div>
+              <el-slider v-model="hueBlue" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHueBlue"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-1-7">
+              <div class="val-tag clearfix">
+                <span class="fl">紫</span>
+                <span class="fr">{{ huePurple }}</span>
+              </div>
+              <el-slider v-model="huePurple" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHuePurple"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-1-8">
+              <el-button type="primary" @click="saveResult">确定</el-button>
+              <el-button @click="resetHsl">重置</el-button>
+            </el-menu-item>
+          </el-menu-item-group>
+        </el-submenu>
+        <!--5-2-->
+        <el-submenu index="5-2">
+          <template slot="title">饱和度</template>
+          <el-menu-item-group>
+            <el-menu-item index="5-2-1">
+              <div class="val-tag clearfix">
+                <span class="fl">红</span>
+                <span class="fr">{{ saturationRed }}</span>
+              </div>
+              <el-slider v-model="saturationRed" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationRed"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-2-2">
+              <div class="val-tag clearfix">
+                <span class="fl">橙</span>
+                <span class="fr">{{ saturationOrange }}</span>
+              </div>
+              <el-slider v-model="saturationOrange" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationOrange"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-2-3">
+              <div class="val-tag clearfix">
+                <span class="fl">黄</span>
+                <span class="fr">{{ saturationYellow }}</span>
+              </div>
+              <el-slider v-model="saturationYellow" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationYellow"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-2-4">
+              <div class="val-tag clearfix">
+                <span class="fl">绿</span>
+                <span class="fr">{{ saturationGreen }}</span>
+              </div>
+              <el-slider v-model="saturationGreen" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationGreen"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-2-5">
+              <div class="val-tag clearfix">
+                <span class="fl">青</span>
+                <span class="fr">{{ saturationCyan }}</span>
+              </div>
+              <el-slider v-model="saturationCyan" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationCyan"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-2-6">
+              <div class="val-tag clearfix">
+                <span class="fl">蓝</span>
+                <span class="fr">{{ saturationBlue }}</span>
+              </div>
+              <el-slider v-model="saturationBlue" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationBlue"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-2-7">
+              <div class="val-tag clearfix">
+                <span class="fl">紫</span>
+                <span class="fr">{{ saturationPurple }}</span>
+              </div>
+              <el-slider v-model="saturationPurple" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationPurple"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-2-8">
+              <el-button type="primary" @click="saveResult">确定</el-button>
+              <el-button @click="resetHsl">重置</el-button>
+            </el-menu-item>
+          </el-menu-item-group>
+        </el-submenu>
+        <!--5-3-->
+        <el-submenu index="5-3">
+          <template slot="title">明度</template>
+          <el-menu-item-group>
+            <el-menu-item index="5-3-1">
+              <div class="val-tag clearfix">
+                <span class="fl">红</span>
+                <span class="fr">{{ lightnessRed }}</span>
+              </div>
+              <el-slider v-model="lightnessRed" :min="-15" :max="15" :step="0.1" :show-tooltip="false" @change="setLightnessRed"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-3-2">
+              <div class="val-tag clearfix">
+                <span class="fl">橙</span>
+                <span class="fr">{{ lightnessOrange }}</span>
+              </div>
+              <el-slider v-model="lightnessOrange" :min="-15" :max="15" :step="0.1" :show-tooltip="false" @change="setLightnessOrange"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-3-3">
+              <div class="val-tag clearfix">
+                <span class="fl">黄</span>
+                <span class="fr">{{ lightnessYellow }}</span>
+              </div>
+              <el-slider v-model="lightnessYellow" :min="-15" :max="15" :step="0.1" :show-tooltip="false" @change="setLightnessYellow"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-3-4">
+              <div class="val-tag clearfix">
+                <span class="fl">绿</span>
+                <span class="fr">{{ lightnessGreen }}</span>
+              </div>
+              <el-slider v-model="lightnessGreen" :min="-15" :max="15" :step="0.1" :show-tooltip="false" @change="setLightnessGreen"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-3-5">
+              <div class="val-tag clearfix">
+                <span class="fl">青</span>
+                <span class="fr">{{ lightnessCyan }}</span>
+              </div>
+              <el-slider v-model="lightnessCyan" :min="-15" :max="15" :step="0.1" :show-tooltip="false" @change="setLightnessCyan"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-3-6">
+              <div class="val-tag clearfix">
+                <span class="fl">蓝</span>
+                <span class="fr">{{ lightnessBlue }}</span>
+              </div>
+              <el-slider v-model="lightnessBlue" :min="-15" :max="15" :step="0.1" :show-tooltip="false" @change="setLightnessBlue"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-3-7">
+              <div class="val-tag clearfix">
+                <span class="fl">紫</span>
+                <span class="fr">{{ lightnessPurple }}</span>
+              </div>
+              <el-slider v-model="lightnessPurple" :min="-35" :max="35" :step="0.1" :show-tooltip="false" @change="setLightnessPurple"></el-slider>
+            </el-menu-item>
+            <el-menu-item index="5-3-8">
+              <el-button type="primary" @click="saveResult">确定</el-button>
+              <el-button @click="resetHsl">重置</el-button>
+            </el-menu-item>
+          </el-menu-item-group>
+        </el-submenu>
+      </el-submenu>
+      <!--66666666666666-->
+      <el-submenu index="6">
+        <template slot="title"><i class="my-icon-blur my-icon"></i>增强</template>
+        <el-submenu index="6-1">
+          <template slot="title">模糊</template>
+          <el-menu-item index="6-1-1">
+            <div class="val-tag clearfix">
+              <span class="fl">半径</span>
+              <span class="fr">{{ radius }}</span>
+            </div>
+            <el-slider v-model="radius" :min="0" :max="20" :show-tooltip="false" @change="setBlurRadius"></el-slider>
+          </el-menu-item>
+          <el-menu-item index="6-1-1">
+            <div class="val-tag clearfix">
+              <span class="fl">sigma</span>
+              <span class="fr">{{ sigma }}</span>
+            </div>
+            <el-slider v-model="sigma" :min="0" :max="20" :show-tooltip="false" @change="setBlurSigma"></el-slider>
+          </el-menu-item>
+          <el-menu-item index="6-1-2">
+            <el-button type="primary" @click="saveResult">确定</el-button>
+            <el-button @click="resetBlur">重置</el-button>
+          </el-menu-item>
+        </el-submenu>
+        <!--<el-submenu index="6-2">-->
+          <!--<template slot="title">噪声</template>-->
+          <!--<el-menu-item index="6-2-1">-->
+            <!--<div class="val-tag clearfix">-->
+              <!--<span class="fl">噪声</span>-->
+              <!--<span class="fr">{{ noise }}</span>-->
+            <!--</div>-->
+            <!--<el-slider v-model="noise" :min="0" :max="50" :show-tooltip="false" @change="setNoise"></el-slider>-->
+          <!--</el-menu-item>-->
+          <!--<el-menu-item index="6-2-2">-->
+            <!--<el-button type="primary" @click="saveResult">确定</el-button>-->
+            <!--<el-button @click="resetNoise">重置</el-button>-->
+          <!--</el-menu-item>-->
+        <!--</el-submenu>-->
+        <el-submenu index="6-3">
+          <template slot="title">锐化</template>
+          <el-menu-item index="6-3-1">
+            <div class="val-tag clearfix">
+              <span class="fl">锐化</span>
+              <span class="fr">{{ sharpen }}</span>
+            </div>
+            <el-slider v-model="sharpen" :min="0" :max="50" :show-tooltip="false" @change="setSharpen"></el-slider>
+          </el-menu-item>
+          <el-menu-item index="6-3-2">
+            <el-button type="primary" @click="saveResult">确定</el-button>
+            <el-button @click="resetSharpen">重置</el-button>
+          </el-menu-item>
+        </el-submenu>
+      </el-submenu>
+      <!--77777777777-->
+      <el-submenu index="7">
+        <template slot="title"><i class="my-icon-edit my-icon"></i>暗角</template>
+        <el-menu-item-group>
+          <el-menu-item index="7-1-1">
+            <div class="val-tag clearfix">
+              <span class="fl">暗角</span>
+              <span class="fr">{{ vignette }}</span>
+            </div>
+            <el-slider v-model="vignette" :min="-50" :max="50" :show-tooltip="false" @change="setVignette"></el-slider>
+          </el-menu-item>
+          <el-menu-item index="2-1-2">
+            <el-button type="primary" @click="saveResult">确定</el-button>
+            <el-button @click="resetVignette">重置</el-button>
+          </el-menu-item>
+        </el-menu-item-group>
+      </el-submenu>
+      <!--888888888888-->
+      <el-submenu index="8">
+        <template slot="title"><i class="my-icon-edit my-icon"></i> 灰度 / 反色</template>
+        <el-menu-item-group>
+          <el-menu-item index="8-1-1">
+            <div class="val-tag clearfix">
+              <span class="fl">灰度</span>
+              <span class="fr">{{ greyscale }}</span>
+            </div>
+            <el-switch v-model="greyscale" on-text="" off-text="" @change="setGreyscale" on-color="#7D5CFF"></el-switch>
+          </el-menu-item>
+          <el-menu-item index="8-1-2">
+            <div class="val-tag clearfix">
+              <span class="fl">反色</span>
+              <span class="fr">{{ invert }}</span>
+            </div>
+            <el-switch v-model="invert" on-text="" off-text="" @change="setInvert" on-color="#7D5CFF"></el-switch>
+          </el-menu-item>
+          <el-menu-item index="5-3-3">
+            <el-button type="primary" @click="saveResult">确定</el-button>
+          </el-menu-item>
+        </el-menu-item-group>
+      </el-submenu>
+      <!--99999999999-->
+      <el-submenu index="9">
+        <template slot="title"><i class="my-icon-edit my-icon"></i> 颜色迁移</template>
+        <el-menu-item-group>
+          <el-menu-item index="9-1-1">
+            <div class="val-tag clearfix">
+              <span class="fl">颜色迁移</span>
+              <span class="fr">{{ brightness }}</span>
+            </div>
+            <el-slider v-model="brightness" :min="-50" :max="50" :show-tooltip="false" @change="setBrightness"></el-slider>
+          </el-menu-item>
+          <el-menu-item index="9-1-2">
+            <el-button type="primary" @click="saveResult">确定</el-button>
+            <el-button @click="reset">重置</el-button>
+          </el-menu-item>
+        </el-menu-item-group>
+      </el-submenu>
+      <!--1010101010-->
+      <el-submenu index="10">
+        <template slot="title"><i class="my-icon-filter my-icon"></i>滤镜</template>
+            <el-row :gutter="5" class="filter-ct">
+              <el-col :span="12" v-for="item in filterList">
+                <div class="filter" :data-filter="item.name" @click="setFilter">
+                  <img class="filter-preview" :src="item.preview">
+                  <p class="filter-name">{{ item.desc }}</p>
+                </div>
+              </el-col>
+            </el-row>
+      </el-submenu>
+    </el-menu>
+  </div>
+  <div class="project-info">
+    <ul class="opensource">
+      <li class="item fl"><p class="title">Power by:</p></li>
+      <li class="item fl" v-for="item in opensource">
+        <a :href="item.link" target="_blank" class="clearfix">
+          <span class="icon fl" :style="item.logo"></span>
+          <p class="desc fl">{{ item.name }}</p>
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
+</template>
+
+<script>
+  import $ from 'jquery';
+  import HSBChannel from '../assets/js/HSBChannel.js';
+  import Curve from '../assets/js/curve.js'
+
+  export default {
+    data() {
+      return {
+        cropList: [
+          {
+            order: '1-1-1',
+            val: '16/9',
+            name: '宽屏16:9',
+          },
+          {
+            order: '1-1-2',
+            val: '4/3',
+            name: '标准4:3',
+          },
+          {
+            order: '1-1-3',
+            val: '1/1',
+            name: '正方形',
+          },
+          {
+            order: '1-1-4',
+            val: '2/3',
+            name: '2:3',
+          },
+        ],
+        curves: {},
+        brightness: 0,
+        contrast: 0,
+        rotate: 0,
+        hue: 0,
+        saturation: 0,
+        radius: 0,
+        sigma: 0,
+        isHsl: 0,
+        curvesChgTimes: 0,
+        // hue
+        hueRed: 0,
+        hueOrange: 0,
+        hueYellow: 0,
+        hueGreen: 0,
+        hueCyan: 0,
+        hueBlue: 0,
+        huePurple: 0,
+        // saturation
+        saturationRed: 0,
+        saturationOrange: 0,
+        saturationYellow: 0,
+        saturationGreen: 0,
+        saturationCyan: 0,
+        saturationBlue: 0,
+        saturationPurple: 0,
+        // lightness
+        lightnessRed: 0,
+        lightnessOrange: 0,
+        lightnessYellow: 0,
+        lightnessGreen: 0,
+        lightnessCyan: 0,
+        lightnessBlue: 0,
+        lightnessPurple: 0,
+        greyscale: false,
+        invert: false,
+        blur: 0,
+        noise: 0,
+        sharpen: 0,
+        vignette: 0,
+        sunrise: false,
+        filterList: [
+          {
+            name: 'sunrise',
+            preview: './static/image/filter-sunrise.jpg',
+            desc: '日出辉映',
+          },
+          {
+            name: 'lomo',
+            preview: './static/image/filter-lomo.jpg',
+            desc: '经典Lomo',
+          },
+          {
+            name: 'clarity',
+            preview: './static/image/filter-clarity.jpg',
+            desc: '这一刻 更清晰',
+          },
+          {
+            name: 'hazyDays',
+            preview: './static/image/filter-hazyDays.jpg',
+            desc: '这一刻 更朦胧',
+          },
+          {
+            name: 'crossProcess',
+            preview: './static/image/filter-crossProcess.jpg',
+            desc: '怀旧电影',
+          },
+          {
+            name: 'concentrate',
+            preview: './static/image/filter-concentrate.jpg',
+            desc: '美式咖啡',
+          },
+          {
+            name: 'jarques',
+            preview: './static/image/filter-jarques.jpg',
+            desc: '抑郁深蓝',
+          },
+          {
+            name: 'nostalgia',
+            preview: './static/image/filter-nostalgia.jpg',
+            desc: '泛黄记忆',
+          },
+          {
+            name: 'pinhole',
+            preview: './static/image/filter-pinhole.jpg',
+            desc: '黑白胶片',
+          },
+          {
+            name: 'sinCity',
+            preview: './static/image/filter-sinCity.jpg',
+            desc: '水墨印染',
+          },
+        ],
+        opensource: [
+          {
+            link: 'https://vuejs.org/',
+            logo: 'background: url(./static/sprites/vue.png);',
+            name: 'Vue.js',
+          },
+          {
+            link: 'https://webpack.js.org/',
+            logo: 'background: url(./static/sprites/webpack.png);',
+            name: 'Webpack',
+          },
+          {
+            link: 'https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API',
+            logo: 'background: url(./static/sprites/canvas.png);',
+            name: 'Canvas',
+          },
+        ],
+      };
+    },
+    mounted() {
+      this.curves = Curve.Curves.createNew();
+      this.drawCurve();
+    },
+    computed: {
+      channels_7() {
+        let channels = [];
+        for (let i = 0 ; i < 7; i++){
+          var channel = HSBChannel.HSBChannel.createNew();
+          channel.setColorIndex(i);
+          channels[i] = channel;
+        }
+        return channels;
+      },
+      // curves() {
+      //   return Curve.Curves.createNew();
+      // },
+    },
+    methods: {
+      setAspectRatio(e){
+        const ratioMap = {
+          '16/9': 16 / 9,
+          '4/3': 4 / 3,
+          '1/1': 1 / 1,
+          '2/3': 2 / 3,
+          NaN,
+        };
+
+        if (this.$store.state.uploaded) {
+          this.$store.state.cropper.setAspectRatio(ratioMap[e.$el.dataset.aspectratio]);
+        } else {
+          this.$message({
+            message: '请先导入图片哦',
+            type: 'warning',
+          });
+        }
+      },
+      drawCurve() {
+        let n = 0;
+        const curveCanvas = this.$refs.curves;
+        const curveCtx = curveCanvas.getContext('2d');
+        curveCtx.beginPath();
+
+        curveCtx.moveTo(0,0);
+        curveCtx.lineTo(255,0);
+
+        curveCtx.moveTo(0,255);
+        curveCtx.lineTo(255,255);
+
+        curveCtx.moveTo(255,0);
+        curveCtx.lineTo(255,255);
+
+        curveCtx.moveTo(0,255);
+        curveCtx.lineTo(0,0);
+
+        curveCtx.moveTo(63,0);
+        curveCtx.lineTo(63,255);
+
+        curveCtx.moveTo(127,0);
+        curveCtx.lineTo(127,255);
+
+        curveCtx.moveTo(191,0);
+        curveCtx.lineTo(191,255);
+
+        curveCtx.moveTo(0,255-63);
+        curveCtx.lineTo(255,255-63);
+
+        curveCtx.moveTo(0,255-127);
+        curveCtx.lineTo(255,255-127);
+
+        curveCtx.moveTo(0,255-191);
+        curveCtx.lineTo(255,255-191);
+
+        curveCtx.closePath();
+
+        curveCtx.stroke();
+        let z = new Array(256);
+        this.curves.CurrentChannel.calcCurve(z);
+        for (let i = 0 ; i < 256 ; i++) {
+          if(z[i] < 0)
+            z[i] = 0;
+          if(z[i] > 255)
+            z[i] = 255;
+        }
+        for (let i = 1; i < 256; ++i ) {
+          curveCtx.beginPath()
+          curveCtx.moveTo(i-1 , 255 - z[i-1]);
+          curveCtx.lineTo(i , 255 - z[i]);
+          curveCtx.closePath();
+          curveCtx.stroke();
+        }
+        // draw control points
+        for (let i = 0 ; i < this.curves.CurrentChannel.points.length ; i++, n++ ) {
+          curveCtx.beginPath();
+          curveCtx.rect(this.curves.CurrentChannel.points[i].x - 3 , 255 - this.curves.CurrentChannel.points[i].y - 3 , 6 , 6);
+          curveCtx.closePath();
+          curveCtx.stroke();
+        }
+      },
+      curveCanvasMouseDown(e) {
+        const curveCanvas = this.$refs.curves;
+        const curveCtx = curveCanvas.getContext('2d');
+        this.curves.mouseDown(e.clientX - curveCanvas.getBoundingClientRect().left, e.clientY - curveCanvas.getBoundingClientRect().top);
+        curveCtx.clearRect(0, 0, curveCanvas.width, curveCanvas.height);
+        this.drawCurve();
+        this.curvesChgTimes += 0.01;
+        this.$store.dispatch('setIsCurvesChg', this.curvesChgTimes);
+        this.$store.dispatch('setColorTables', this.curves.createColorTables());
+      },
+      curveCanvasMouseMove(e) {
+        const curveCanvas = this.$refs.curves;
+        const curveCtx = curveCanvas.getContext('2d');
+        if (this.curves.mouseMove(e.clientX - curveCanvas.getBoundingClientRect().left, e.clientY - curveCanvas.getBoundingClientRect().top))
+        curveCtx.clearRect(0, 0, curveCanvas.width, curveCanvas.height);
+        this.drawCurve();
+        this.curvesChgTimes += 0.01;
+        this.$store.dispatch('setIsCurvesChg', this.curvesChgTimes);
+        this.$store.dispatch('setColorTables', this.curves.createColorTables());
+      },
+      curveCanvasMouseUp(e) {
+        const curveCanvas = this.$refs.curves;
+        const curveCtx = curveCanvas.getContext('2d');
+        this.curves.mouseUp(e.clientX - curveCanvas.getBoundingClientRect().left, e.clientY - curveCanvas.getBoundingClientRect().top);
+        //   // drawImgByCurves(current_pixelsData , curves.createColorTables());
+        //   // e.preventDefault()
+        curveCtx.clearRect(0, 0, curveCanvas.width, curveCanvas.height);
+        this.drawCurve();
+        this.curvesChgTimes += 0.01;
+        this.$store.dispatch('setIsCurvesChg', this.curvesChgTimes);
+        this.$store.dispatch('setColorTables', this.curves.createColorTables());
+      },
+      // clickCurves() {
+      //   const curveCanvas = this.$refs.curves;
+      //   const curveCtx = curveCanvas.getContext('2d');
+      //   curveCanvas.mousedown = function (e) {
+      //     console.log(2);
+      //     this.curves.mouseDown(e.clientX - curveCanvas.getBoundingClientRect().left, e.clientY - curveCanvas.getBoundingClientRect().top);
+      //     // drawImgByCurves(current_pixelsData , this.curves.createColorTables());
+      //     curveCtx.clearRect(0,0,curveCanvas.width,curveCanvas.height);
+      //     // console.log(this.curves.RGBChannel.points);
+      //     this.curves.draw(curveCtx);
+      //   };
+      //   curveCanvas.mousemove = function (e) {
+      //     if (this.curves.mouseMove(e.clientX - curveCanvas.getBoundingClientRect().left, e.clientY -  curveCanvas.getBoundingClientRect().top))
+      //       // drawImgByCurves(current_pixelsData , curves.createColorTables());
+      //     // e.preventDefault()
+      //     curveCtx.clearRect(0,0,curveCanvas.width,curveCanvas.height);
+      //     this.curves.draw();
+      //   };
+      //   curveCanvas.mouseup = function (e) {
+      //     this.curves.mouseUp(e.clientX - curveCanvas.getBoundingClientRect().left, e.clientY -  curveCanvas.getBoundingClientRect().top);
+      //     // drawImgByCurves(current_pixelsData , curves.createColorTables());
+      //     // e.preventDefault()
+      //     curveCtx.clearRect(0,0,curveCanvas.width,curveCanvas.height);
+      //     this.curves.draw();
+      //   };
+      // },
+      setBrightness() {
+        this.$store.dispatch('setBrightness', this.brightness);
+      },
+      setContrast() {
+        this.$store.dispatch('setContrast', this.contrast);
+      },
+      setRotate() {
+        this.$store.dispatch('setRotate', this.rotate);
+      },
+      setHue() {
+        this.$store.dispatch('setHue', this.hue);
+      },
+      setSaturation() {
+        this.$store.dispatch('setSaturation', this.saturation);
+      },
+      setBlurRadius() {
+        this.$store.dispatch('setBlurRadius', this.radius);
+      },
+      setBlurSigma() {
+        this.$store.dispatch('setBlurSigma', this.sigma);
+      },
+      // 色相
+      setHueRed() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setHueRed', this.hueRed);
+        this.channels_7[1].hue = this.hueRed;
+        this.$store.dispatch('setChannels', this.channels_7);
+        // console.log(this.$store.state.imgArguments.channels_7);
+      },
+      setHueOrange() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setHueOrange', this.hueOrange);
+        this.channels_7[1].hue = this.hueOrange;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setHueYellow() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setHueYellow', this.hueYellow);
+        this.channels_7[2].hue = this.hueYellow;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setHueGreen() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setHueGreen', this.hueGreen);
+        this.channels_7[3].hue = this.hueGreen;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setHueCyan() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setHueCyan', this.hueCyan);
+        this.channels_7[4].hue = this.hueCyan;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setHueBlue() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setHueBlue', this.hueBlue);
+        this.channels_7[5].hue = this.hueBlue;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setHuePurple() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setHuePurple', this.huePurple);
+        this.channels_7[6].hue = this.huePurple;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      // 饱和度
+      setSaturationRed() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setSaturationRed', this.saturationRed);
+        this.channels_7[1].saturation = this.saturationRed;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setSaturationOrange() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setSaturationOrange', this.saturationOrange);
+        this.channels_7[1].saturation = this.saturationOrange;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setSaturationYellow() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setSaturationYellow', this.saturationYellow);
+        this.channels_7[2].saturation = this.saturationYellow;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setSaturationGreen() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setSaturationGreen', this.saturationGreen);
+        this.channels_7[3].saturation = this.saturationGreen;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setSaturationCyan() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setSaturationCyan', this.saturationCyan);
+        this.channels_7[4].saturation = this.saturationCyan;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setSaturationBlue() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setSaturationBlue', this.saturationBlue);
+        this.channels_7[5].saturation = this.saturationBlue;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setSaturationPurple() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setSaturationPurple', this.saturationPurple);
+        this.channels_7[6].saturation = this.saturationPurple;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      // lightness
+      setLightnessRed() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setLightnessRed', this.lightnessRed);
+        this.channels_7[1].brightness = this.lightnessRed;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setLightnessOrange() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setLightnessOrange', this.lightnessOrange);
+        this.channels_7[1].brightness = this.lightnessOrange;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setLightnessYellow() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setLightnessYellow', this.lightnessYellow);
+        this.channels_7[2].brightness = this.lightnessYellow;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setLightnessGreen() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setLightnessGreen', this.lightnessGreen);
+        this.channels_7[3].brightness = this.lightnessGreen;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setLightnessCyan() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setLightnessCyan', this.lightnessCyan);
+        this.channels_7[4].brightness = this.lightnessCyan;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setLightnessBlue() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setLightnessBlue', this.lightnessBlue);
+        this.channels_7[5].brightness = this.lightnessBlue;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setLightnessPurple() {
+        this.isHsl += 1;
+        this.$store.dispatch('setIsHsl', this.isHsl);
+        // this.$store.dispatch('setLightnessPurple', this.lightnessPurple);
+        this.channels_7[6].brightness = this.lightnessPurple;
+        this.$store.dispatch('setChannels', this.channels_7);
+      },
+      setGreyscale() {
+        this.$store.dispatch('setGreyscale', this.greyscale);
+      },
+      setInvert() {
+        this.$store.dispatch('setInvert', this.invert);
+      },
+      setBlur() {
+        this.$store.dispatch('setBlur', this.blur);
+      },
+      setNoise() {
+        this.$store.dispatch('setNoise', this.noise);
+      },
+      setSharpen() {
+        this.$store.dispatch('setSharpen', this.sharpen);
+      },
+      setVignette() {
+        this.$store.dispatch('setVignette', this.vignette);
+      },
+      setFilter(e) {
+        const $target = $(e.currentTarget);
+        const filterType = $target.data('filter');
+
+        this.$store.dispatch('setFilter', filterType);
+      },
+      saveResult() {
+        const imgUrl = this.$store.state.storeUrl;
+        this.$store.dispatch('setImgUrl', imgUrl);
+        this.$store.dispatch('storeResult', '');
+        this.$notify({
+          title: '提示',
+          message: '参数调整完成 可点击下载',
+          type: 'success',
+          duration: 1500,
+        });
+        this.brightness = 0;
+        this.contrast = 0;
+        this.saturation = 0;
+        this.radius = 0;
+        this.sigma = 0;
+        this.isHsl = 0;
+        this.greyscale = false;
+        this.invert = false;
+        this.sharpen = 0;
+        this.rotate = 0;
+        // hue
+        this.hueRed = 0;
+        this.hueOrange = 0;
+        this.hueYellow = 0;
+        this.hueGreen = 0;
+        this.hueCyan = 0;
+        this.hueBlue = 0;
+        this.huePurple = 0;
+        // saturation
+        this.saturationRed = 0;
+        this.saturationOrange = 0;
+        this.saturationYellow = 0;
+        this.saturationGreen = 0;
+        this.saturationCyan = 0;
+        this.saturationBlue = 0;
+        this.saturationPurple = 0;
+        // lightness
+        this.lightnessRed = 0;
+        this.lightnessOrange = 0;
+        this.lightnessYellow = 0;
+        this.lightnessGreen = 0;
+        this.lightnessCyan = 0;
+        this.lightnessBlue = 0;
+        this.lightnessPurple = 0;
+        this.$store.dispatch('setIsHsl', 0);
+      },
+      saveCurvesResult(){
+        const imgUrl = this.$store.state.storeUrl;
+        this.$store.dispatch('setImgUrl', imgUrl);
+        this.$store.dispatch('storeResult', '');
+        this.$notify({
+          title: '提示',
+          message: '参数调整完成 可点击下载',
+          type: 'success',
+          duration: 1500,
+        });
+        this.resetCurves();
+      },
+      reset() {
+
+      },
+      resetBrightnessAndContrast() {
+        this.brightness = 0;
+        this.contrast = 0;
+      },
+      resetHsl() {
+        this.isHsl = 0;
+        // hue
+        this.hueRed = 0;
+        this.hueOrange = 0;
+        this.hueYellow = 0;
+        this.hueGreen = 0;
+        this.hueCyan = 0;
+        this.hueBlue = 0;
+        this.huePurple = 0;
+        // saturation
+        this.saturationRed = 0;
+        this.saturationOrange = 0;
+        this.saturationYellow = 0;
+        this.saturationGreen = 0;
+        this.saturationCyan = 0;
+        this.saturationBlue = 0;
+        this.saturationPurple = 0;
+        // lightness
+        this.lightnessRed = 0;
+        this.lightnessOrange = 0;
+        this.lightnessYellow = 0;
+        this.lightnessGreen = 0;
+        this.lightnessCyan = 0;
+        this.lightnessBlue = 0;
+        this.lightnessPurple = 0;
+        this.$store.dispatch('setIsHsl', 0);
+      },
+      resetCurves() {
+        const curveCanvas = this.$refs.curves;
+        const curveCtx = curveCanvas.getContext('2d');
+        this.curves = Curve.Curves.createNew();
+        curveCtx.clearRect(0, 0, curveCanvas.width, curveCanvas.height);
+        this.drawCurve();
+        this.$store.dispatch('setColorTables', this.curves.createColorTables());
+        this.curvesChgTimes = 0;
+        this.$store.dispatch('setIsCurvesChg', this.curvesChgTimes);
+      },
+      resetBlur() {
+        this.radius = 0;
+        this.sigma = 0;
+      },
+      resetVignette() {
+
+      },
+      resetRotate(){
+        this.rotate = 0;
+      },
+      resetSaturation() {
+        this.saturation = 0;
+      },
+      resetGrayscale() {
+        this.greyscale = false;
+        this.invert = false;
+      },
+      resetColor() {
+        this.hue = 0;
+        this.saturation = 0;
+      },
+      resetNoise() {
+        this.noise = 0;
+      },
+      resetSharpen() {
+        this.sharpen = 0;
+      },
+    },
+  };
+</script>
+
+<style>
+  .fl { float: left; }
+  .fr { float: right; }
+  .clearfix:after { display: block; content: ''; clear: both; }
+  .el-menu { border-radius: 0; }
+  .el-menu-item-group__title { padding: 0; }
+  .el-submenu .el-menu-item { position: relative; padding: 12px 30px !important; border-bottom: 1px solid #3c3f43; border-top: 1px solid #3c3f43; height: 80px; }
+  .el-submenu .el-menu-item .val-tag { display: inline;  margin: 0; padding: 0; line-height: 1; font-size: 14px; color: #828890; }
+  /*.el-menu */
+  .el-submenu__title { padding-left: 80px !important; height: 60px; text-align: left; font-size: 18px; }
+  .el-submenu__icon-arrow { right: 30px; }
+
+  .el-slider__runway { margin: 18px 0; }
+  .el-slider__runway, .el-slider__bar { height: 3px; }
+  .el-slider__button-wrapper { line-height: 36px; }
+  .el-slider__button { width: 11px; height: 11px; }
+
+  .v-submenu { font-size: 14px; }
+  .my-icon { display: inline-block; vertical-align: sub; margin-right: 10px; width: 24px; height: 24px; }
+  .my-icon-cut { background: url('../../static/sprites/cut.png'); background-size: 24px 24px; }
+  .my-icon-edit { background: url('../../static/sprites/editor.png'); background-size: 24px 24px; }
+  .my-icon-blur { background: url('../../static/sprites/blur.png'); background-size: 24px 24px; }
+  .my-icon-fun { background: url('../../static/sprites/fun.png'); background-size: 24px 24px; }
+  .my-icon-filter { background: url('../../static/sprites/filter.png'); background-size: 24px 24px; }
+
+  .opensource,
+  .opensource .item,
+  .opensource a{
+    height: 100%;
+  }
+  .opensource {
+    line-height: 30px;
+  }
+
+  .opensource .title {
+    margin: 0;
+    padding-left: 3px;
+    font-size: 12px;
+    color: #ddd;
+  }
+
+  .opensource .item {
+    margin: 0 3px;
+  }
+
+  .opensource a {
+    position: relative;
+    display: inline-block;
+    padding: 0 5px;
+  }
+
+  .opensource .icon {
+    position: relative;
+    top: 6px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .opensource .desc {
+    padding-left: 5px;
+    margin: 0;
+    font-size: 12px;
+    color: #fff;
+  }
+
+  .filter-preview, .filter-ct {
+    width: 100%;
+  }
+  .filter-ct {
+    margin-bottom: 15px;
+  }
+
+  .filter-preview {
+    display: block;
+  }
+
+  .filter {
+    position: relative;
+    right: -8px;
+    margin-top: 15px;
+    width: 90%;
+    border: 2px solid #fff;
+  }
+  .filter:hover {
+    box-shadow: 0 4px 8px 0 rgba(151, 168, 190, 0.6);
+  }
+  .filter-name {
+    display: block;
+    margin: 0;
+    padding: 5px 0;
+    font-size: 14px;
+    background: #fff;
+    color: #333;
+  }
+</style>
