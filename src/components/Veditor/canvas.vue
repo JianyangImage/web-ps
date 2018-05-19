@@ -3,15 +3,15 @@
     <div @dblclick="dblclick" class="editor" v-loading="loading" element-loading-text="滤镜计算中 ···">
       <!--<div style="position:relative width: 600px height:400px;">-->
       <div style="position: absolute">
-        <cropp :width=width
-               :height=height>
+        <cropp v-show="croppable"
+               :width=width
+               :height=height
+               :aspectratio=aspectratio>
         </cropp>
       </div>
 
       <!--</div>-->
-      <canvas :width=width
-              :height=height
-              ref="canvas"
+      <canvas ref="canvas"
               class="control__canvas">
       </canvas>
         <!--<template v-if="url"><img :src="url" :alt="name" @load="load"></template>-->
@@ -25,6 +25,7 @@
 <script>
   import Cropp from './cropp';
   import $ from 'jquery';
+  import { RgbToLab, LabToRgb, RgbToGray, FCM, FCMCluster, DistanceLab } from '../../assets/js/colorTransfer';
 
   const caman = window.Caman;
 
@@ -33,15 +34,16 @@
       return {
         width: 1200,
         height: 675,
+        n: 4/3,
         canvas: '',
         context: {},
         imgData: {},
         pixelsData: [],
         rotateCanvas: '',
+        sourcePixelsData: [],
         rotate_ctx: {},
         curImgData: {},
         curPixelsData: [],
-        uploaded: false,
         cropper: false,
         data: null,
         canvasData: null,
@@ -52,6 +54,8 @@
         // url: '',
         originalUrl: '',
         loading: false,
+        cropping: false,
+        uploaded: false,
         // URL: '',
       };
     },
@@ -82,6 +86,21 @@
       editable() {
         return this.$store.state.uploaded;
       },
+      croppable() {
+        return this.$store.state.cropping;
+      },
+      transfering() {
+        return this.$store.state.transfering;
+      },
+      aspectratio() {
+        return this.$store.state.cropp.aspectratio;
+      },
+      // width() {
+      //   return +this.$store.state.imgMsg.width;
+      // },
+      // height() {
+      //   return +this.$store.state.imgMsg.height;
+      // },
       brightness() {
         return this.$store.state.imgArguments.brightness;
       },
@@ -109,9 +128,6 @@
       colorTables() {
         return this.$store.state.imgArguments.colorTables;
       },
-      // blur() {
-      //   return this.$store.state.imgArguments.blur;
-      // },
       radius() {
         return this.$store.state.imgArguments.radius;
       },
@@ -136,10 +152,18 @@
         this.uploaded = show;
         if (!show) return;
       },
+      // croppable(show) {
+      //   this.cropping = show;
+      //   if (!show) return;
+      // },
       imgURL(url) {
         if (this.$store.state.uploaded) {
+          this.width = this.$store.state.imgMsg.width;
+          this.height = this.$store.state.imgMsg.height;
           this.canvas = this.$refs.canvas;
           this.context = this.canvas.getContext('2d');
+          this.canvas.width = this.width;
+          this.canvas.height = this.height;
           const imageObject = new Image();
           const vm = this;
           // imageObject.src = this.$store.state.imgMsg.url;
@@ -152,6 +176,12 @@
             this.curImgData = vm.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
             this.curPixelsData = this.curImgData.data;
           };
+        }
+      },
+      transfering(bool) {
+        if (this.uploaded && bool) {
+          this.drawImgByColorTransfer();
+          this.$store.dispatch('cancelColorTansfer');
         }
       },
       brightness(value) {
@@ -220,20 +250,22 @@
         }
       },
       lisenActionType(type) {
-        const actionType = type.actionType;
-        const actionMap = {
-          remove: this.remove,
-          clear: this.clear,
-          crop: this.crop,
-          cropModel: this.changeModel,
-          moveModel: this.changeModel,
-          'rotate-right': this.changeModel,
-          'rotate-left': this.changeModel,
-          'flip-vertical': this.changeModel,
-          'flip-horizontal': this.changeModel,
-        };
-
-        actionMap[actionType](actionType);
+        if (type) {
+          const actionType = type.actionType;
+          console.log(actionType)
+          const actionMap = {
+            remove: this.remove,
+            clear: this.clear,
+            crop: this.crop,
+            cropModel: this.changeModel,
+            moveModel: this.changeModel,
+            'rotate-right': this.changeModel,
+            'rotate-left': this.changeModel,
+            'flip-vertical': this.changeModel,
+            'flip-horizontal': this.changeModel,
+          };
+          actionMap[actionType](actionType);
+        }
       },
       // vGrayscale(grayscale) {
       //   if (this.uploaded) {
@@ -272,14 +304,48 @@
       // },
     },
     methods: {
+      drawImgByColorTransfer() {
+        const imageObject = new Image();
+        imageObject.src = this.$store.state.sourceImgMsg.url;
+        // const sourceWidth = imageObject.width;
+        // const sourceHeight = imageObject.height;
+        // console.log('sourceWidth:', sourceWidth);
+        // console.log('sourceHeight:', sourceHeight);
+        // console.log('tarWidth:', this.width);
+        // console.log('tarHeight:', this.height);
+        //result canvas
+        let canvas = this.$refs.canvas;
+        let ctx = canvas.getContext('2d');
+        let imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        let pixelsData = imgData.data;
+        //source canvas
+        let sourceCanvas = document.createElement('canvas');
+        sourceCanvas.width = this.$store.state.sourceImgMsg.width;
+        sourceCanvas.height = this.$store.state.sourceImgMsg.height;
+        let sourceCtx = sourceCanvas.getContext('2d');
+        sourceCtx.drawImage(imageObject, 0, 0, sourceCanvas.width, sourceCanvas.height);
+        let sourceImgData = sourceCtx.getImageData(0, 0,  sourceCanvas.width, sourceCanvas.height);
+        let sourcePixelsData = sourceImgData.data;
+        console.log('sourcePixelsData:', sourceImgData);
+        // FCM
+        let resultPixelsData = FCM(this.curPixelsData, this.width, this.height, sourcePixelsData, sourceCanvas.width, sourceCanvas.height);
+        for (let i = 0; i < pixelsData.length; i += 4) {
+          pixelsData[i] = resultPixelsData[i];
+          pixelsData[i + 1] = resultPixelsData[i + 1];
+          pixelsData[i + 2] = resultPixelsData[i + 2];
+        }
+        ctx.putImageData(imgData, 0, 0);
+        const URL = canvas.toDataURL('image/jpeg');
+        this.$store.dispatch('storeResult', URL);
+      },
       drawImgByBrightness(curPixelsData, brightnessValue, contrastValue) {
         // const vm = this;
         const b = brightnessValue / 100;
         const c = contrastValue / 100;
-        const canvas = this.$refs.canvas;
-        const ctx = canvas.getContext('2d');
-        const imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        const pixelsData = imgData.data;
+        let canvas = this.$refs.canvas;
+        let ctx = canvas.getContext('2d');
+        let imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        let pixelsData = imgData.data;
         const K = Math.floor(Math.tan(((45 + (44 * c)) / 180) * Math.PI) * 100) / 100;
         for (let i = 0; i < pixelsData.length; i += 4) {
           pixelsData[i + 0] = ((curPixelsData[i + 0] - (128 * (1 - b))) * K) + (128 * (b + 1));
@@ -291,10 +357,10 @@
         this.$store.dispatch('storeResult', URL);
       },
       drawImgBySaturation(curPixelsData, saturation) {
-        const canvas = this.$refs.canvas;
-        const ctx = canvas.getContext('2d');
-        const imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        const pixelsData = imgData.data;
+        let canvas = this.$refs.canvas;
+        let ctx = canvas.getContext('2d');
+        let imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        let pixelsData = imgData.data;
         for (let i = 0; i < pixelsData.length; i += 4) {
           const max = Math.max(curPixelsData[i + 0], curPixelsData[i + 1], curPixelsData[i + 2]);
           pixelsData[i + 0] = max !== curPixelsData[i + 0] ? ((max - curPixelsData[i + 0])
@@ -309,10 +375,10 @@
         this.$store.dispatch('storeResult', URL);
       },
       drawImgByHSL(curPixelsData, channels) {
-        const canvas = this.$refs.canvas;
-        const ctx = canvas.getContext('2d');
-        const imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        const pixelsData = imgData.data;
+        let canvas = this.$refs.canvas;
+        let ctx = canvas.getContext('2d');
+        let imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        let pixelsData = imgData.data;
         let hsb =[];
         let delta_hsb = [];
         let channel_index = -1;
@@ -365,10 +431,10 @@
         this.$store.dispatch('storeResult', URL);
       },
       drawImgByBlur(curPixelsData, radius, sigma){
-        const canvas = this.$refs.canvas;
-        const ctx = canvas.getContext('2d');
-        const imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        const pixelsData = imgData.data;
+        let canvas = this.$refs.canvas;
+        let ctx = canvas.getContext('2d');
+        let imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        let pixelsData = imgData.data;
         const width = imgData.width;
         const height = imgData.height;
         let gaussMatrix = [],
@@ -450,10 +516,10 @@
         }
       },
       drawImgByColorToGrey(curPixelsData, bool) {
-        const canvas = this.$refs.canvas;
-        const ctx = canvas.getContext('2d');
-        const imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        const pixelsData = imgData.data;
+        let canvas = this.$refs.canvas;
+        let ctx = canvas.getContext('2d');
+        let imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        let pixelsData = imgData.data;
         if (bool) {
           for (let i = 0 ; i < pixelsData.length ; i += 4) {
             const gray = Math.round(curPixelsData[i] * 0.3 + curPixelsData[i + 1] * 0.59 + curPixelsData[i + 2] * 0.11);
@@ -470,10 +536,10 @@
         this.$store.dispatch('storeResult', URL);
       },
       drawImgByInvert(curPixelsData, bool) {
-        const canvas = this.$refs.canvas;
-        const ctx = canvas.getContext('2d');
-        const imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        const pixelsData = imgData.data;
+        let canvas = this.$refs.canvas;
+        let ctx = canvas.getContext('2d');
+        let imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        let pixelsData = imgData.data;
         if (bool) {
           for (let i = 0; i < pixelsData.length; i += 4) {
             pixelsData[i + 0] = 255 - curPixelsData[i];
@@ -490,10 +556,10 @@
       },
       drawImgBySharpen(curPixelsData, sharpen) {
         const sharpenValue = sharpen / 100;
-        const canvas = this.$refs.canvas;
-        const ctx = canvas.getContext('2d');
-        const imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        const pixelsData = imgData.data;
+        let canvas = this.$refs.canvas;
+        let ctx = canvas.getContext('2d');
+        let imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        let pixelsData = imgData.data;
         let Laplacian = [ -1, -1, -1, -1, 8, -1, -1, -1, -1 ];// 拉普拉斯锐化模板
         // var Laplacian = [ 0, -1, 0, -1, 4, -1, 0, -1, 0 ];// 拉普拉斯锐化模板
         for (let y = 1; y < imgData.height - 1 ; y++) {
@@ -528,11 +594,11 @@
         this.$store.dispatch('storeResult', URL);
       },
       drawImgByRotate(rotateValue) {
-        const canvas = this.$refs.canvas;
-        const ctx = canvas.getContext('2d');
+        let canvas = this.$refs.canvas;
+        let ctx = canvas.getContext('2d');
         // rotateCanvas
-        const rotateCanvas = document.createElement('canvas');
-        const rotate_ctx = rotateCanvas.getContext('2d');
+        let rotateCanvas = document.createElement('canvas');
+        let rotate_ctx = rotateCanvas.getContext('2d');
         rotateCanvas.width = canvas.width;
         rotateCanvas.height = canvas.height;
         rotate_ctx.putImageData(this.curImgData, 0, 0);
@@ -555,10 +621,10 @@
         this.$store.dispatch('storeResult', URL);
       },
       drawImgByCurves(curPixelsData, colorTables) {
-        const canvas = this.$refs.canvas;
-        const ctx = canvas.getContext('2d');
-        const imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        const pixelsData = imgData.data;
+        let canvas = this.$refs.canvas;
+        let ctx = canvas.getContext('2d');
+        let imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        let pixelsData = imgData.data;
         for (let i = 0 ; i < pixelsData.length ; i += 4) {
           pixelsData[i + 0] = colorTables[0][curPixelsData[i + 0]];
           pixelsData[i + 1] = colorTables[1][curPixelsData[i + 1]];
@@ -978,40 +1044,52 @@
           this.$store.dispatch('cancelCropping');
         }
       },
-      nextCrop() {
-        this.$store.state.cropper.replace(this.url);
-        this.$store.dispatch('cancelCropping');
-      },
+      // nextCrop() {
+      //   this.$store.state.cropper.replace(this.url);
+      //   this.$store.dispatch('cancelCropping');
+      // },
       crop() {
-        const cropper = this.$store.state.cropper;
-        const type = this.type;
-
+        // const cropper = this.$store.state.cropper;
+        // const type = this.type;
         if (this.$store.state.cropping) {
-          this.originalUrl = this.url;
-          this.data = cropper.getData();
-          this.canvasData = cropper.getCanvasData();
-          this.cropBoxData = cropper.getCropBoxData();
-          // 非png格式图像空白处填充白色
-          this.url = cropper.getCroppedCanvas(type === 'image/png' ? null : {
-            fillColor: '#fff',
-          }).toDataURL(type);
+          this.$store.dispatch('cancelCropping');
+          // this.originalUrl = this.url;
+          // this.data = cropper.getData();
+          // this.canvasData = cropper.getCanvasData();
+          // this.cropBoxData = cropper.getCropBoxData();
+          // // 非png格式图像空白处填充白色
+          // this.url = cropper.getCroppedCanvas(type === 'image/png' ? null : {
+          //   fillColor: '#fff',
+          // }).toDataURL(type);
+          let canvas = this.$refs.canvas;
+          let ctx = canvas.getContext('2d');
+          const imageObject = new Image();
+          imageObject.src = this.$store.state.imgMsg.url;
+          const croppX = this.n * this.$store.state.cropp.croppX;
+          const croppY = this.n * this.$store.state.cropp.croppY;
+          const croppWidth = this.n * this.$store.state.cropp.croppWidth;
+          const croppHeight = this.n * this.$store.state.cropp.croppHeight;
 
+          ctx.drawImage(imageObject, croppX, croppY, croppWidth, croppHeight, 0, 0, this.width, this.height);
+          const URL = canvas.toDataURL('image/jpeg');
+          this.$store.dispatch('setImgUrl', URL);
+          this.$store.dispatch('storeResult', '');
           this.$notify({
             title: '提示',
             message: '图片剪裁成功',
             type: 'success',
             duration: 1500,
           });
-          this.nextCrop();
+          // this.nextCrop();
           this.$store.dispatch('cropImgMsg', {
             url: this.url,
             name: this.name,
           });
+
         }
       },
       clear() {
         if (this.$store.state.cropping) {
-          this.$store.state.cropper.clear();
           this.$store.dispatch('cancelCropping');
         }
       },
@@ -1030,21 +1108,32 @@
         // Disallow to delete image when cropping
         if (!this.$store.state.cropping) {
           this.stop();
-          this.data = null;
-          this.image = null;
-          this.$store.dispatch('setImgMsg', {
-            type: '',
-            name: '',
-            url: '',
-          });
-          this.originalUrl = '';
+          this.$store.dispatch('setRemoving');
+          this.$store.dispatch('setRemoveAll');
+          // this.data = null;
+          // this.image = null;
+          // this.$store.dispatch('setImgMsg', {
+          //   type: '',
+          //   name: '',
+          //   url: '',
+          //   width: 0,
+          //   height: 0,
+          // });
+          // this.$store.dispatch('setSourceImgMsg', {
+          //   url: '',
+          //   width: 0,
+          //   height: 0,
+          // });
+          // this.$store.dispatch('cancelColorTansfer');
+          // // this.originalUrl = '';
           this.$notify({
             title: '提示',
             message: '清空画布成功 可导入新的图片',
             type: 'success',
             duration: 3500,
           });
-          this.$store.dispatch('cancelUpload');
+          // this.$store.dispatch('cancelRemoving');
+          // this.$store.dispatch('cancelUpload');
         }
       },
     },

@@ -91,7 +91,7 @@
       click(e) {
         const target = e.target;
         const actionType = target.dataset.action || target.parentNode.dataset.action;
-
+        console.log('actionType:', actionType);
         if (actionType) {
           this.$store.dispatch('setActionType', {
             actionType,

@@ -2,72 +2,110 @@
 <div>
   <div class="tac custom-scrollbar" id="vpic_sidebar">
     <el-menu unique-opened class="el-menu-vertical-demo" theme="dark">
+      <!--111111111-->
       <el-submenu index="1">
-        <template slot="title"><i class="my-icon-cut my-icon"></i>裁切</template>
-        <el-submenu index="1-1">
-          <template slot="title">固定比例</template>
-          <el-menu-item-group>
-            <el-menu-item v-for="cropItem in cropList" :index="cropItem.order" :data-aspectratio="cropItem.val" @click="setAspectRatio">{{ cropItem.name }}</el-menu-item>
-          </el-menu-item-group>
-        </el-submenu>
-        <el-menu-item index="1-2" data-aspectratio="NaN" @click="setAspectRatio">自由裁切</el-menu-item>
+        <template slot="title"><i class="my-icon-edit my-icon"></i>颜色迁移</template>
+        <el-menu-item-group>
+          <el-menu-item index="1-1-1" style="height: 285px">
+            <div class="val-tag clearfix">
+              <span class="fl">目标图像</span>
+              <div class="tar">
+                <img v-show="tarShow"
+                     :src="tarUrl"
+                     :width=tarWidth
+                     :height=tarHeight
+                />
+              </div>
+            </div>
+          </el-menu-item>
+          <el-menu-item index="1-1-2" style="height: 285px">
+            <div class="val-tag clearfix">
+              <span class="fl">参考图像</span>
+              <br/>
+              <source-upload></source-upload>
+              <div class="source">
+                <img v-show="sourceShow"
+                     :src="sourceUrl"
+                     :width=sourceWidth
+                     :height=sourceHeight
+                />
+              </div>
+            </div>
+          </el-menu-item>
+          <el-menu-item index="1-1-3">
+            <el-button type="primary" @click="startColorTansfer">开始迁移</el-button>
+            <el-button @click="restColorTransfer">重置</el-button>
+          </el-menu-item>
+        </el-menu-item-group>
       </el-submenu>
       <!--222222222222-->
       <el-submenu index="2">
+        <template slot="title"><i class="my-icon-cut my-icon"></i>裁切</template>
+          <el-menu-item-group>
+            <el-menu-item v-for="cropItem in cropList" :index="cropItem.order" :data-aspectratio="cropItem.val" @click=setAspectRatio($event)>{{ cropItem.name }}</el-menu-item>
+            <el-menu-item index="2-2-8" data-aspectratio="NaN" @click=setAspectRatio($event)>自由裁切</el-menu-item>
+            <!--<el-menu-item index="1-1-6">-->
+              <!--<el-button type="primary" @click="saveResult">确定</el-button>-->
+              <!--<el-button @click="resetCropp">取消</el-button>-->
+            <!--</el-menu-item>-->
+          </el-menu-item-group>
+      </el-submenu>
+      <!--3333333333333-->
+      <el-submenu index="3">
         <template slot="title"><i class="my-icon-edit my-icon"></i>旋转</template>
         <el-menu-item-group>
-          <el-menu-item index="2-1-1">
+          <el-menu-item index="3-1-1">
             <div class="val-tag clearfix">
               <span class="fl">旋转</span>
               <span class="fr">{{ rotate }}</span>
             </div>
             <el-slider v-model="rotate" :min="-50" :max="50" :show-tooltip="false" @change="setRotate"></el-slider>
           </el-menu-item>
-          <el-menu-item index="2-1-2">
+          <el-menu-item index="3-1-2">
             <el-button type="primary" @click="saveResult">确定</el-button>
             <el-button @click="resetRotate">重置</el-button>
           </el-menu-item>
         </el-menu-item-group>
       </el-submenu>
-      <!--33333333333333-->
-      <el-submenu index="3">
+      <!--4444444-->
+      <el-submenu index="4">
         <template slot="title"><i class="my-icon-edit my-icon"></i>基础调整</template>
-        <!--3-1-->
-        <el-submenu index="3-1">
+        <!--4-1-->
+        <el-submenu index="4-1">
           <template slot="title">亮度 / 对比度</template>
           <el-menu-item-group>
-            <el-menu-item index="3-1-1">
+            <el-menu-item index="4-1-1">
               <div class="val-tag clearfix">
                 <span class="fl">亮度</span>
                 <span class="fr">{{ brightness }}</span>
               </div>
               <el-slider v-model="brightness" :min="-50" :max="50" :show-tooltip="false" @change="setBrightness"></el-slider>
             </el-menu-item>
-            <el-menu-item index="3-1-2">
+            <el-menu-item index="4-1-2">
               <div class="val-tag clearfix">
                 <span class="fl">对比度</span>
                 <span class="fr">{{ contrast }}</span>
               </div>
               <el-slider v-model="contrast" :min="-50" :max="50" :show-tooltip="false" @change="setContrast"></el-slider>
             </el-menu-item>
-            <el-menu-item index="3-1-3">
+            <el-menu-item index="4-1-3">
               <el-button type="primary" @click="saveResult">确定</el-button>
               <el-button @click="resetBrightnessAndContrast">重置</el-button>
             </el-menu-item>
           </el-menu-item-group>
         </el-submenu>
-        <!--3-2-->
-        <el-submenu index="3-2">
+        <!--4-2-->
+        <el-submenu index="4-2">
           <template slot="title">饱和度</template>
           <el-menu-item-group>
-            <el-menu-item index="3-2">
+            <el-menu-item index="4-2-1">
               <div class="val-tag clearfix">
                 <span class="fl">饱和度</span>
                 <span class="fr">{{ saturation }}</span>
               </div>
               <el-slider v-model="saturation" :min="-50" :max="50" :show-tooltip="false" @change="setSaturation"></el-slider>
             </el-menu-item>
-            <el-menu-item index="3-2-3">
+            <el-menu-item index="4-2-2">
               <el-button type="primary" @click="saveResult">确定</el-button>
               <el-button @click="resetSaturation">重置</el-button>
             </el-menu-item>
@@ -97,220 +135,220 @@
           <!--</el-menu-item-group>-->
         <!--</el-submenu>-->
       </el-submenu>
-      <!--444444444444444-->
-      <el-submenu index="4">
+      <!--5555555555-->
+      <el-submenu index="5">
         <template slot="title"><i class="my-icon-edit my-icon"></i>曲线</template>
         <el-menu-item-group>
-          <el-menu-item index="4-1-1" style="height: 285px">
+          <el-menu-item index="5-1-1" style="height: 285px">
             <canvas ref="curves" width="256" height="256" @mousedown=curveCanvasMouseDown($event)  @mousemove=curveCanvasMouseMove($event) @mouseup=curveCanvasMouseUp($event) ></canvas>
           </el-menu-item>
-          <el-menu-item index="4-1-2">
+          <el-menu-item index="5-1-2">
             <el-button type="primary" @click="saveCurvesResult">确定</el-button>
             <el-button @click="resetCurves">重置</el-button>
           </el-menu-item>
         </el-menu-item-group>
       </el-submenu>
-      <!--555555555555-->
-      <el-submenu index="5">
+      <!--66666666666-->
+      <el-submenu index="6">
         <template slot="title"><i class="my-icon-edit my-icon"></i> HSL</template>
-        <!--5-1-->
-        <el-submenu index="5-1">
+        <!--6-1-->
+        <el-submenu index="6-1">
           <template slot="title">色相</template>
           <el-menu-item-group>
-            <el-menu-item index="5-1-1">
+            <el-menu-item index="6-1-1">
               <div class="val-tag clearfix">
                 <span class="fl">红</span>
                 <span class="fr">{{ hueRed }}</span>
               </div>
               <el-slider v-model="hueRed" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHueRed"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-1-2">
+            <el-menu-item index="6-1-2">
               <div class="val-tag clearfix">
                 <span class="fl">橙</span>
                 <span class="fr">{{ hueOrange }}</span>
               </div>
               <el-slider v-model="hueOrange" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHueOrange"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-1-3">
+            <el-menu-item index="6-1-3">
               <div class="val-tag clearfix">
                 <span class="fl">黄</span>
                 <span class="fr">{{ hueYellow }}</span>
               </div>
               <el-slider v-model="hueYellow" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHueYellow"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-1-4">
+            <el-menu-item index="6-1-4">
               <div class="val-tag clearfix">
                 <span class="fl">绿</span>
                 <span class="fr">{{ hueGreen }}</span>
               </div>
               <el-slider v-model="hueGreen" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHueGreen"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-1-5">
+            <el-menu-item index="6-1-5">
               <div class="val-tag clearfix">
                 <span class="fl">青</span>
                 <span class="fr">{{ hueCyan }}</span>
               </div>
               <el-slider v-model="hueCyan" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHueCyan"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-1-6">
+            <el-menu-item index="6-1-6">
               <div class="val-tag clearfix">
                 <span class="fl">蓝</span>
                 <span class="fr">{{ hueBlue }}</span>
               </div>
               <el-slider v-model="hueBlue" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHueBlue"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-1-7">
+            <el-menu-item index="6-1-7">
               <div class="val-tag clearfix">
                 <span class="fl">紫</span>
                 <span class="fr">{{ huePurple }}</span>
               </div>
               <el-slider v-model="huePurple" :min="-50" :max="50" :step="0.1" :show-tooltip="false" @change="setHuePurple"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-1-8">
+            <el-menu-item index="6-1-8">
               <el-button type="primary" @click="saveResult">确定</el-button>
               <el-button @click="resetHsl">重置</el-button>
             </el-menu-item>
           </el-menu-item-group>
         </el-submenu>
-        <!--5-2-->
-        <el-submenu index="5-2">
+        <!--6-2-->
+        <el-submenu index="6-2">
           <template slot="title">饱和度</template>
           <el-menu-item-group>
-            <el-menu-item index="5-2-1">
+            <el-menu-item index="6-2-1">
               <div class="val-tag clearfix">
                 <span class="fl">红</span>
                 <span class="fr">{{ saturationRed }}</span>
               </div>
               <el-slider v-model="saturationRed" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationRed"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-2-2">
+            <el-menu-item index="6-2-2">
               <div class="val-tag clearfix">
                 <span class="fl">橙</span>
                 <span class="fr">{{ saturationOrange }}</span>
               </div>
               <el-slider v-model="saturationOrange" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationOrange"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-2-3">
+            <el-menu-item index="6-2-3">
               <div class="val-tag clearfix">
                 <span class="fl">黄</span>
                 <span class="fr">{{ saturationYellow }}</span>
               </div>
               <el-slider v-model="saturationYellow" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationYellow"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-2-4">
+            <el-menu-item index="6-2-4">
               <div class="val-tag clearfix">
                 <span class="fl">绿</span>
                 <span class="fr">{{ saturationGreen }}</span>
               </div>
               <el-slider v-model="saturationGreen" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationGreen"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-2-5">
+            <el-menu-item index="6-2-5">
               <div class="val-tag clearfix">
                 <span class="fl">青</span>
                 <span class="fr">{{ saturationCyan }}</span>
               </div>
               <el-slider v-model="saturationCyan" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationCyan"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-2-6">
+            <el-menu-item index="6-2-6">
               <div class="val-tag clearfix">
                 <span class="fl">蓝</span>
                 <span class="fr">{{ saturationBlue }}</span>
               </div>
               <el-slider v-model="saturationBlue" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationBlue"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-2-7">
+            <el-menu-item index="6-2-7">
               <div class="val-tag clearfix">
                 <span class="fl">紫</span>
                 <span class="fr">{{ saturationPurple }}</span>
               </div>
               <el-slider v-model="saturationPurple" :min="-40" :max="40" :step="0.1" :show-tooltip="false" @change="setSaturationPurple"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-2-8">
+            <el-menu-item index="6-2-8">
               <el-button type="primary" @click="saveResult">确定</el-button>
               <el-button @click="resetHsl">重置</el-button>
             </el-menu-item>
           </el-menu-item-group>
         </el-submenu>
-        <!--5-3-->
-        <el-submenu index="5-3">
+        <!--6-3-->
+        <el-submenu index="6-3">
           <template slot="title">明度</template>
           <el-menu-item-group>
-            <el-menu-item index="5-3-1">
+            <el-menu-item index="6-3-1">
               <div class="val-tag clearfix">
                 <span class="fl">红</span>
                 <span class="fr">{{ lightnessRed }}</span>
               </div>
               <el-slider v-model="lightnessRed" :min="-15" :max="15" :step="0.1" :show-tooltip="false" @change="setLightnessRed"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-3-2">
+            <el-menu-item index="6-3-2">
               <div class="val-tag clearfix">
                 <span class="fl">橙</span>
                 <span class="fr">{{ lightnessOrange }}</span>
               </div>
               <el-slider v-model="lightnessOrange" :min="-15" :max="15" :step="0.1" :show-tooltip="false" @change="setLightnessOrange"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-3-3">
+            <el-menu-item index="6-3-3">
               <div class="val-tag clearfix">
                 <span class="fl">黄</span>
                 <span class="fr">{{ lightnessYellow }}</span>
               </div>
               <el-slider v-model="lightnessYellow" :min="-15" :max="15" :step="0.1" :show-tooltip="false" @change="setLightnessYellow"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-3-4">
+            <el-menu-item index="6-3-4">
               <div class="val-tag clearfix">
                 <span class="fl">绿</span>
                 <span class="fr">{{ lightnessGreen }}</span>
               </div>
               <el-slider v-model="lightnessGreen" :min="-15" :max="15" :step="0.1" :show-tooltip="false" @change="setLightnessGreen"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-3-5">
+            <el-menu-item index="6-3-5">
               <div class="val-tag clearfix">
                 <span class="fl">青</span>
                 <span class="fr">{{ lightnessCyan }}</span>
               </div>
               <el-slider v-model="lightnessCyan" :min="-15" :max="15" :step="0.1" :show-tooltip="false" @change="setLightnessCyan"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-3-6">
+            <el-menu-item index="6-3-6">
               <div class="val-tag clearfix">
                 <span class="fl">蓝</span>
                 <span class="fr">{{ lightnessBlue }}</span>
               </div>
               <el-slider v-model="lightnessBlue" :min="-15" :max="15" :step="0.1" :show-tooltip="false" @change="setLightnessBlue"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-3-7">
+            <el-menu-item index="6-3-7">
               <div class="val-tag clearfix">
                 <span class="fl">紫</span>
                 <span class="fr">{{ lightnessPurple }}</span>
               </div>
               <el-slider v-model="lightnessPurple" :min="-35" :max="35" :step="0.1" :show-tooltip="false" @change="setLightnessPurple"></el-slider>
             </el-menu-item>
-            <el-menu-item index="5-3-8">
+            <el-menu-item index="6-3-8">
               <el-button type="primary" @click="saveResult">确定</el-button>
               <el-button @click="resetHsl">重置</el-button>
             </el-menu-item>
           </el-menu-item-group>
         </el-submenu>
       </el-submenu>
-      <!--66666666666666-->
-      <el-submenu index="6">
+      <!--7777777777-->
+      <el-submenu index="7">
         <template slot="title"><i class="my-icon-blur my-icon"></i>增强</template>
-        <el-submenu index="6-1">
+        <el-submenu index="7-1">
           <template slot="title">模糊</template>
-          <el-menu-item index="6-1-1">
+          <el-menu-item index="7-1-1">
             <div class="val-tag clearfix">
               <span class="fl">半径</span>
               <span class="fr">{{ radius }}</span>
             </div>
             <el-slider v-model="radius" :min="0" :max="20" :show-tooltip="false" @change="setBlurRadius"></el-slider>
           </el-menu-item>
-          <el-menu-item index="6-1-1">
+          <el-menu-item index="7-1-1">
             <div class="val-tag clearfix">
               <span class="fl">sigma</span>
               <span class="fr">{{ sigma }}</span>
             </div>
             <el-slider v-model="sigma" :min="0" :max="20" :show-tooltip="false" @change="setBlurSigma"></el-slider>
           </el-menu-item>
-          <el-menu-item index="6-1-2">
+          <el-menu-item index="7-1-2">
             <el-button type="primary" @click="saveResult">确定</el-button>
             <el-button @click="resetBlur">重置</el-button>
           </el-menu-item>
@@ -329,50 +367,50 @@
             <!--<el-button @click="resetNoise">重置</el-button>-->
           <!--</el-menu-item>-->
         <!--</el-submenu>-->
-        <el-submenu index="6-3">
+        <el-submenu index="7-3">
           <template slot="title">锐化</template>
-          <el-menu-item index="6-3-1">
+          <el-menu-item index="7-3-1">
             <div class="val-tag clearfix">
               <span class="fl">锐化</span>
               <span class="fr">{{ sharpen }}</span>
             </div>
             <el-slider v-model="sharpen" :min="0" :max="50" :show-tooltip="false" @change="setSharpen"></el-slider>
           </el-menu-item>
-          <el-menu-item index="6-3-2">
+          <el-menu-item index="7-3-2">
             <el-button type="primary" @click="saveResult">确定</el-button>
             <el-button @click="resetSharpen">重置</el-button>
           </el-menu-item>
         </el-submenu>
       </el-submenu>
-      <!--77777777777-->
-      <el-submenu index="7">
+      <!--88888888-->
+      <el-submenu index="8">
         <template slot="title"><i class="my-icon-edit my-icon"></i>暗角</template>
         <el-menu-item-group>
-          <el-menu-item index="7-1-1">
+          <el-menu-item index="8-1-1">
             <div class="val-tag clearfix">
               <span class="fl">暗角</span>
               <span class="fr">{{ vignette }}</span>
             </div>
             <el-slider v-model="vignette" :min="-50" :max="50" :show-tooltip="false" @change="setVignette"></el-slider>
           </el-menu-item>
-          <el-menu-item index="2-1-2">
+          <el-menu-item index="8-1-2">
             <el-button type="primary" @click="saveResult">确定</el-button>
             <el-button @click="resetVignette">重置</el-button>
           </el-menu-item>
         </el-menu-item-group>
       </el-submenu>
-      <!--888888888888-->
-      <el-submenu index="8">
+      <!--999999999999-->
+      <el-submenu index="9">
         <template slot="title"><i class="my-icon-edit my-icon"></i> 灰度 / 反色</template>
         <el-menu-item-group>
-          <el-menu-item index="8-1-1">
+          <el-menu-item index="9-1-1">
             <div class="val-tag clearfix">
               <span class="fl">灰度</span>
               <span class="fr">{{ greyscale }}</span>
             </div>
             <el-switch v-model="greyscale" on-text="" off-text="" @change="setGreyscale" on-color="#7D5CFF"></el-switch>
           </el-menu-item>
-          <el-menu-item index="8-1-2">
+          <el-menu-item index="9-1-2">
             <div class="val-tag clearfix">
               <span class="fl">反色</span>
               <span class="fr">{{ invert }}</span>
@@ -381,23 +419,6 @@
           </el-menu-item>
           <el-menu-item index="5-3-3">
             <el-button type="primary" @click="saveResult">确定</el-button>
-          </el-menu-item>
-        </el-menu-item-group>
-      </el-submenu>
-      <!--99999999999-->
-      <el-submenu index="9">
-        <template slot="title"><i class="my-icon-edit my-icon"></i> 颜色迁移</template>
-        <el-menu-item-group>
-          <el-menu-item index="9-1-1">
-            <div class="val-tag clearfix">
-              <span class="fl">颜色迁移</span>
-              <span class="fr">{{ brightness }}</span>
-            </div>
-            <el-slider v-model="brightness" :min="-50" :max="50" :show-tooltip="false" @change="setBrightness"></el-slider>
-          </el-menu-item>
-          <el-menu-item index="9-1-2">
-            <el-button type="primary" @click="saveResult">确定</el-button>
-            <el-button @click="reset">重置</el-button>
           </el-menu-item>
         </el-menu-item-group>
       </el-submenu>
@@ -433,30 +454,46 @@
   import $ from 'jquery';
   import HSBChannel from '../assets/js/HSBChannel.js';
   import Curve from '../assets/js/curve.js'
+  import SourceUpload from '../components/sourceUpload';
 
   export default {
     data() {
       return {
         cropList: [
           {
-            order: '1-1-1',
+            order: '2-1-1',
             val: '16/9',
-            name: '宽屏16:9',
+            name: '16:9',
           },
           {
-            order: '1-1-2',
+            order: '2-1-2',
+            val: '9/16',
+            name: '9:16',
+          },
+          {
+            order: '2-1-3',
             val: '4/3',
-            name: '标准4:3',
+            name: '4:3',
           },
           {
-            order: '1-1-3',
-            val: '1/1',
-            name: '正方形',
+            order: '2-1-4',
+            val: '3/4',
+            name: '3:4',
           },
           {
-            order: '1-1-4',
+            order: '2-1-5',
+            val: '3/2',
+            name: '3:2',
+          },
+          {
+            order: '2-1-6',
             val: '2/3',
             name: '2:3',
+          },
+          {
+            order: '2-1-7',
+            val: '1/1',
+            name: '1:1',
           },
         ],
         curves: {},
@@ -571,11 +608,17 @@
         ],
       };
     },
+    components: {
+      SourceUpload,
+    },
     mounted() {
       this.curves = Curve.Curves.createNew();
       this.drawCurve();
     },
     computed: {
+      isRemoveAll() {
+        return this.$store.state.removing;
+      },
       channels_7() {
         let channels = [];
         for (let i = 0 ; i < 7; i++){
@@ -585,28 +628,66 @@
         }
         return channels;
       },
-      // curves() {
-      //   return Curve.Curves.createNew();
-      // },
+      tarUrl() {
+        return this.$store.state.imgMsg.url;
+      },
+      sourceUrl() {
+        return this.$store.state.sourceImgMsg.url;
+      },
+      tarShow() {
+        if (this.$store.state.imgMsg.url)
+          return true;
+        else
+          return false;
+      },
+      sourceShow() {
+        if (this.$store.state.sourceImgMsg.url)
+          return true;
+        else
+          return false;
+      },
+      tarWidth() {
+        return this.$store.state.imgMsg.width/5;
+      },
+      tarHeight() {
+        return this.$store.state.imgMsg.height/5;
+      },
+      sourceWidth() {
+        return this.$store.state.sourceImgMsg.url;
+      },
+      sourceHeight() {
+        return this.$store.state.sourceImgMsg.url;
+      },
+    },
+    watch: {
+      isRemoveAll(bool) {
+        if (bool) {
+          this.reset();
+        }
+      },
     },
     methods: {
-      setAspectRatio(e){
+      setAspectRatio(e) {
         const ratioMap = {
           '16/9': 16 / 9,
+          '9/16': 9 / 16,
           '4/3': 4 / 3,
+          '3/4': 3 / 4,
           '1/1': 1 / 1,
           '2/3': 2 / 3,
+          '3/2': 3 / 2,
           NaN,
         };
-
+        this.$store.dispatch('setCropping');
         if (this.$store.state.uploaded) {
-          this.$store.state.cropper.setAspectRatio(ratioMap[e.$el.dataset.aspectratio]);
+          this.$store.dispatch('setAspectRatio', ratioMap[e.$el.dataset.aspectratio]);
         } else {
           this.$message({
             message: '请先导入图片哦',
             type: 'warning',
           });
         }
+        console.log(this.$store.state);
       },
       drawCurve() {
         let n = 0;
@@ -970,7 +1051,18 @@
         this.lightnessPurple = 0;
         this.$store.dispatch('setIsHsl', 0);
       },
-      saveCurvesResult(){
+      startColorTansfer() {
+        this.$store.dispatch('startColorTansfer');
+      },
+      restColorTransfer() {
+        this.$store.dispatch('cancelColorTansfer');
+        this.$store.dispatch('setSourceImgMsg', {
+            url: '',
+            width: 0,
+            height: 0,
+        });
+      },
+      saveCurvesResult() {
         const imgUrl = this.$store.state.storeUrl;
         this.$store.dispatch('setImgUrl', imgUrl);
         this.$store.dispatch('storeResult', '');
@@ -983,7 +1075,16 @@
         this.resetCurves();
       },
       reset() {
-
+        this.resetBrightnessAndContrast();
+        this.resetHsl();
+        this.resetCurves();
+        this.resetBlur();
+        this.resetVignette();
+        this.resetRotate();
+        this.resetSaturation();
+        this.resetGrayscale();
+        this.resetNoise();
+        this.resetSharpen();
       },
       resetBrightnessAndContrast() {
         this.brightness = 0;
@@ -1016,6 +1117,9 @@
         this.lightnessBlue = 0;
         this.lightnessPurple = 0;
         this.$store.dispatch('setIsHsl', 0);
+      },
+      resetCropp() {
+        this.$store.dispatch('cancelCropping');
       },
       resetCurves() {
         const curveCanvas = this.$refs.curves;
@@ -1054,11 +1158,112 @@
       resetSharpen() {
         this.sharpen = 0;
       },
+      read(file, callback = () => {}) {
+        const imgReg = /^image\/\w+$/;
+        const imgMaxSize = 3; // 上传图片最大体积，单位 mb
+        const imgWarnSize = 0.8; // 上传图片警戒体积，单位 mb
+        let reader = null;
+
+        if (file) {
+          if (imgReg.test(file.type)) {
+            // fileReader读取的文件体积单位为字节 b
+            const imgSize = file.size / (1024 * 1024);
+
+            if (imgSize < imgMaxSize) {
+              if (imgSize > imgWarnSize) {
+                this.$notify({
+                  title: '提示',
+                  message: '图片体积过大 处理速度可能会下降',
+                  type: 'warning',
+                  duration: 4000,
+                  offset: 120,
+                });
+              }
+              reader = new FileReader(); // 实例化 Web Api FileReader
+              reader.onload = () => {
+                // 上传区域置空
+                this.$store.dispatch('setUpload');
+                // store传递类型以及文件信息
+                this.$store.dispatch('setImgMsg', {
+                  type: file.type,
+                  name: file.name,
+                  url: reader.result,
+                });
+                callback();
+              };
+              reader.readAsDataURL(file);
+            } else {
+              this.$message({
+                message: '图片体积须低于3M 请重新选择',
+                type: 'warning',
+              });
+              callback();
+            }
+          } else {
+            this.$message({
+              message: '请选择图片文件',
+              type: 'warning',
+            });
+            callback();
+          }
+        } else {
+          callback();
+        }
+      },
     },
   };
 </script>
 
 <style>
+  .tar {
+    overflow: hidden;
+    margin-top: 40px;
+    width: 100%;
+    height: 200px;
+  }
+  .source {
+    overflow: hidden;
+    margin-top: -10px;
+    width: 100%;
+    height: 200px;
+  }
+  .upload {
+    width: 100%;
+    height: 100%;
+  }
+  .source-upload-btn {
+    /*position: relative;*/
+    margin-top: 40px;
+    width: 100%;
+    height: 100%;
+    /*line-height: 108px;*/
+    border-radius: 10px;
+    box-sizing: border-box;
+    border: 2px dashed #ccc;
+    transition: 0.2s;
+  }
+  .source-upload-btn:hover {
+    background: #eee;
+  }
+  .source-upload-icon {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    background: url('../../static/sprites/plus.png') no-repeat;
+  }
+  .source-sr-only {
+    cursor: pointer;
+  }
+  @media screen and (max-width: 1600px) {
+    .primary-pic-ct {
+      height: 300px;
+    }
+
+    .source-upload-btn{
+      height: 200px;
+      line-height: 208px;
+    }
+  }
   .fl { float: left; }
   .fr { float: right; }
   .clearfix:after { display: block; content: ''; clear: both; }

@@ -20,6 +20,11 @@
 
     export default {
       name: 'cropp',
+      props: {
+        width: Number,
+        height: Number,
+        aspectratio: Number,
+      },
       data() {
         return {
           isDraging: false,
@@ -30,8 +35,6 @@
           croppWidth: 200,
           croppX: 0,
           croppY: 0,
-          croppWidth: 0,
-          croppHeight: 0,
         };
       },
       computed: {
@@ -75,42 +78,50 @@
           e.stopPropagation();
           this.isDraging = true;
           this.contact = 'up-left';
+          this.setCroppPosition();
         },
         upOnmousedown(e) {
           e.stopPropagation();
           this.isDraging = true;
           this.contact = 'up';
+          this.setCroppPosition();
         },
         upRightOnmousedown(e) {
           e.stopPropagation();
           this.isDraging = true;
           this.contact = 'up-right';
+          this.setCroppPosition();
         },
         rightOnmousedown(e) {
           console.log(e);
           e.stopPropagation();
           this.isDraging = true;
           this.contact = 'right';
+          this.setCroppPosition();
         },
         downRightLeftOnmousedown(e) {
           e.stopPropagation();
           this.isDraging = true;
           this.contact = 'down-right';
+          this.setCroppPosition();
         },
         downOnmousedown(e) {
           e.stopPropagation();
           this.isDraging = true;
           this.contact = 'down';
+          this.setCroppPosition();
         },
         downLeftLeftOnmousedown(e) {
           e.stopPropagation();
           this.isDraging = true;
           this.contact = 'down-left';
+          this.setCroppPosition();
         },
         leftOnmousedown(e) {
           e.stopPropagation();
           this.isDraging = true;
           this.contact = 'left';
+          this.setCroppPosition();
         },
         mainOnmousedown(e) {
           e.stopPropagation();
@@ -118,7 +129,7 @@
           this.contact = 'main';
           this.delta_x = e.clientX - this.getPosition(this.mainDiv).left;
           this.delta_y = e.clientY - this.getPosition(this.mainDiv).top;
-          console.log(this.delta_x,this.delta_y);
+          this.setCroppPosition();
         },
         onMouseUp(e) {
           this.isDraging = false;
@@ -141,10 +152,10 @@
           this.setChoice();
         },
         setCroppPosition() {
-          this.croppX = this.getPosition(this.boxDiv).left - this.getPosition(this.mainDiv).left;
-          this.croppY = this.getPosition(this.boxDiv).top - this.getPosition(this.mainDiv).top;;
-          this.croppWidth = this.mainDiv.style.width;
-          this.croppHeight = this.mainDiv.style.height;
+          this.croppX = this.getPosition(this.mainDiv).left - this.getPosition(this.boxDiv).left;
+          this.croppY = this.getPosition(this.mainDiv).top - this.getPosition(this.boxDiv).top;
+          this.croppWidth = this.mainDiv.offsetWidth - 2;
+          this.croppHeight = this.mainDiv.offsetHeight - 2;
           this.$store.dispatch('setCroppX', this.croppX);
           this.$store.dispatch('setCroppY', this.croppY);
           this.$store.dispatch('setCroppWidth', this.croppWidth);
@@ -169,7 +180,6 @@
           const y = e.clientY;
           this.mainDiv.style.left = x - this.delta_x - this.getPosition(this.boxDiv).left + 'px';
           this.mainDiv.style.top = y - this.delta_y - this.getPosition(this.boxDiv).top + 'px';// 左边的距离（相当于左边位置横坐标）等于选取框距父级元素的距离减去增加的宽度
-          // console.log(x,y,mainDiv.style.left,mainDiv.style.top)
           this.setCroppPosition();
         },
         upMove(e) {
@@ -199,7 +209,7 @@
         },
         leftMove(e) {
           const widthBefore = this.mainDiv.offsetWidth - 2;
-          const addWidth = this.getPosition( this.mainDiv).left - e.clientX;// 增加的宽度等于距离屏幕左边的距离减去鼠标位置横坐标
+          const addWidth = this.getPosition(this.mainDiv).left - e.clientX;// 增加的宽度等于距离屏幕左边的距离减去鼠标位置横坐标
           this.croppWidth += addWidth;
           this.mainDiv.style.width = widthBefore + addWidth + 'px';
           this.mainDiv.style.left = this.mainDiv.offsetLeft - addWidth + 'px';// 左边的距离（相当于左边位置横坐标）等于选取框距父级元素的距离减去增加的宽度
@@ -211,6 +221,13 @@
           const bottom = this.mainDiv.offsetTop + this.mainDiv.offsetHeight;
           const left = this.mainDiv.offsetLeft;
           // this.img2.style.clip = 'rect("+top+"px,"+right+"px,"+bottom+"px,"+left+"px)';
+        },
+      },
+      watch: {
+        aspectratio(value) {
+          this.mainDiv.style.width = this.width / 4 + 'px';
+          this.mainDiv.style.height = (this.width / 4) / value + 'px';
+          this.setCroppPosition();
         },
       },
     };

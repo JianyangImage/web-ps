@@ -18,6 +18,9 @@
         <input id="file" type="file" accept="image/svg,image/gif,image/png,image/jpeg,image/bmp,image/webp" class="sr-only">
       </div>
     </el-dialog>
+      <!--<div class="upload-btn J-upload" title="选择本地图片">-->
+
+
     <div class="import-area J-import" @click="dialogTableVisible = true">
       <span class="icon"></span>
       <p class="tip">拖入图片或 <span class="browse">点击导入</span></p>
@@ -103,6 +106,29 @@
       },
     },
     methods: {
+      // getFile(e) {
+      //   let imgwidth = 0;
+      //   let imgheight = 0;
+      //   const url = URL.createObjectURL(e.target.files[0]);
+      //   const imageObject = new Image();
+      //   imageObject.src = url;
+      //   imageObject.onload = () => {
+      //     imgwidth = imageObject.width;
+      //     imgheight = imageObject.height;
+      //     this.$store.dispatch('setUpload');
+      //     // store传递类型以及文件信息
+      //     this.$store.dispatch('setImgMsg', {
+      //       type: 'image/jpeg',
+      //       name,
+      //       url,
+      //       width: +imgwidth,
+      //       height: +imgheight,
+      //     });
+      //     console.log(this.$store.state.imgMsg);
+      //   };
+      //   // const imgwidth = imageObject.width;
+      //   // const imgheight = imageObject.height;
+      // },
       read(file, callback = () => {}) {
         const imgReg = /^image\/\w+$/;
         const imgMaxSize = 3; // 上传图片最大体积，单位 mb
@@ -128,15 +154,26 @@
               reader = new FileReader(); // 实例化 Web Api FileReader
 
               reader.onload = () => {
-                // 上传区域置空
-                this.$store.dispatch('setUpload');
-                // store传递类型以及文件信息
-                this.$store.dispatch('setImgMsg', {
-                  type: file.type,
-                  name: file.name,
-                  url: reader.result,
-                });
-
+                const imageObject = new Image();
+                imageObject.src = reader.result;
+                let imgWidth = 0;
+                let imgHeight = 0;
+                imageObject.onload = () => {
+                  imgWidth = +imageObject.width;
+                  imgHeight = +imageObject.height;
+                  // console.log(imageObject);
+                  // console.log(this.$store.state)
+                  // 上传区域置空
+                  this.$store.dispatch('setUpload');
+                  // store传递类型以及文件信息
+                  this.$store.dispatch('setImgMsg', {
+                    type: file.type,
+                    name: file.name,
+                    url: reader.result,
+                    width: imgWidth,
+                    height: imgHeight,
+                  });
+                }
                 callback();
               };
 
@@ -187,6 +224,8 @@
           type: 'image/jpeg',
           name,
           url,
+          width: +target.dataset.width,
+          height: +target.dataset.height,
         });
       },
       getBase64Image(img) {
@@ -202,7 +241,7 @@
   };
 </script>
 
-<style>
+<style scoped>
   .upload {
     width: 100%;
     height: 100%;
@@ -317,15 +356,16 @@
     height: 32px;
     background: url('../../../../static/sprites/plus.png') no-repeat;
   }
+  .sr-only {
+    cursor: pointer;
+  }
   .el-dialog__header {
     text-align: left;
   }
   .v-modal {
     opacity: 0.6;
   }
-  .sr-only {
-    cursor: pointer;
-  }
+
 
   @media screen and (max-width: 1600px) {
     .primary-pic-ct {
